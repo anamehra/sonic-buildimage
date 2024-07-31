@@ -6,6 +6,7 @@ import threading
 import traceback
 
 from swsscommon import swsscommon
+from sonic_py_common import device_info
 
 from .config import ConfigMgr
 from .directory import Directory
@@ -74,8 +75,11 @@ def do_work():
         RouteMapMgr(common_objs, "APPL_DB", swsscommon.APP_BGP_PROFILE_TABLE_NAME),
         # Device Global Manager
         DeviceGlobalCfgMgr(common_objs, "CONFIG_DB", swsscommon.CFG_BGP_DEVICE_GLOBAL_TABLE_NAME),
-        ChassisAppDbMgr(common_objs, "CHASSIS_APP_DB", "BGP_DEVICE_GLOBAL"),
     ]
+
+    if device_info.is_chassis():
+        managers.append(ChassisAppDbMgr(common_objs, "CHASSIS_APP_DB", "BGP_DEVICE_GLOBAL"))
+
     runner = Runner(common_objs['cfg_mgr'])
     for mgr in managers:
         runner.add_manager(mgr)
