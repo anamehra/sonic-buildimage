@@ -4,4 +4,4 @@ Description=Discard unused blocks
 [Service]
 Type=oneshot
 ExecStartPre=/usr/local/bin/log_ssd_health
-ExecStart=/sbin/fstrim -av
+ExecStart=/usr/local/sbin/fstrim-sonic
