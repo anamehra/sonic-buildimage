@@ -1,0 +1,66 @@
+{# Copyright 2015-2026 Cisco Systems, Inc. #}
+{# SPDX-License-Identifier: BSD-3-Clause #}
+{# See platform/cisco/COPYRIGHT for the full license text. #}
+
+{%- set default_cable = '300m' %}
+
+{%- set ports2cable = {
+    'internal'               : '1m'
+    }
+-%}
+
+{# 108MB sms memory - all sizes in MB #}
+{%- set pool_headroom_size = '25165824' %}
+{%- set ingress_pool_size = '67108864' %}
+{%- set egress_pool_size = '50331648' %}
+{%- set egress_lossy_profile_size = '0' %}
+{%- set egress_lossy_profile_dynamic_th = '0' %}
+{%- set ingress_lossy_profile_size = '0' %}
+{%- set passthrough_dynamic_th = '7' %}
+
+{# 108MB sms memory - all sizes in MB - shortlink-sms (no HBM) #}
+{%- macro generate_buffer_pool_and_profiles() %}
+    "BUFFER_POOL": {
+        "ingress_lossless_pool": {
+            "type": "ingress",
+            "size": "{{ ingress_pool_size }}",
+            "mode": "dynamic",
+            "xoff": "{{ pool_headroom_size }}"
+        },
+        "egress_lossy_pool": {
+            "type": "egress",
+            "size": "{{ egress_pool_size }}",
+            "mode": "dynamic"
+        }
+    },
+    "BUFFER_PROFILE": {
+        "egress_lossy_profile": {
+            "pool":"egress_lossy_pool",
+            "size": "{{ egress_lossy_profile_size }}",
+            "dynamic_th": "{{ egress_lossy_profile_dynamic_th }}"
+        },
+        "egress_lossless_profile": {
+            "pool":"egress_lossy_pool",
+            "size": "{{ egress_lossy_profile_size }}",
+            "dynamic_th": "{{ passthrough_dynamic_th }}"
+        },
+        "ingress_lossy_profile": {
+            "pool":"ingress_lossless_pool",
+            "size": "{{ ingress_lossy_profile_size }}",
+            "dynamic_th": "{{ passthrough_dynamic_th }}"
+        }
+    },
+{%- endmacro %}
+
+{% import 'buffers_extra_ports.j2' as defs1 with context %}
+{% macro generate_bp_port_list(PORT, PORT_BP) %}
+{{ defs1.generate_bp_port_list(PORT, PORT_BP) }}
+{%- endmacro %}
+
+{% import 'buffers_extra_queues.j2' as defs2 with context %}
+{%- macro generate_queue_buffers_with_extra_lossless_queues(port_names, port_names_require_extra_buffer) %}
+{{ defs2.generate_queue_buffers_with_extra_lossless_queues(port_names, port_names_require_extra_buffer) }}
+{%- endmacro %}
+{%- macro generate_queue_buffers(port_names) %}
+{{ defs2.generate_queue_buffers(port_names) }}
+{%- endmacro %}

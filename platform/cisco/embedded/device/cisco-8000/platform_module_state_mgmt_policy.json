@@ -1,0 +1,41 @@
+{
+  "metadata": {
+    "platform": "cisco-8000",
+    "version": "1.0",
+    "description": "State machine action and timeout management for Cisco 8000 series",
+    "_possible_actions": "log_info, log_warning, log_notice, reboot_module, power_down",
+    "_timeout_value_units": "seconds"
+  },
+  "module_state_timeout_actions": {
+    "Present": {
+      "timeout":180,
+      "action": "log_warning",
+      "message": "Module presence timeout - may need manual intervention"
+    },
+    "Online": {
+      "timeout":300,
+      "action": "log_warning",
+      "message": "Module online timeout - may need manual intervention"
+    },
+    "Booting": {
+      "timeout":600,
+      "action": "log_warning",
+      "message": "Module stuck in booting - check hardware"
+    },
+    "Offline": {
+      "timeout":3600,
+      "action": "log_notice",
+      "message": "Module offline for extended period - check hardware"
+    },
+    "Fault": {
+      "timeout":1800,
+      "action": "log_notice",
+      "message": "Module in fault state for extended period - manual intervention required"
+    },
+    "FwUpdateInProgress": {
+      "timeout":1800,
+      "action": "log_notice",
+      "message": "Firmware update timeout - manual intervention required"
+    }
+  }
+}

@@ -1,0 +1,121 @@
+{# Copyright 2015-2026 Cisco Systems, Inc. #}
+{# SPDX-License-Identifier: BSD-3-Clause #}
+{# See platform/cisco/COPYRIGHT for the full license text. #}
+
+{# 108MB sms memory - all sizes in MB #}
+{%- set pool_headroom_size = '25165824' %}
+{%- set ingress_pool_size = '67108864' %}
+{%- set egress_pool_size = '50331648' %}
+{%- set egress_lossy_profile_size = '0' %}
+{%- set egress_lossy_profile_dynamic_th = '0' %}
+{%- set ingress_lossy_profile_size = '0' %}
+{%- set passthrough_dynamic_th = '7' %}
+
+{% if globals.sms_64mb %}
+{%- set pool_headroom_size = '12582912' %}
+{%- set ingress_pool_size = '41943040' %}
+{%- set egress_pool_size = '31457280' %}
+{% endif %}
+
+{%- macro generate_buffer_pool_and_profiles() %}
+    "BUFFER_POOL": {
+        "ingress_lossless_pool": {
+            "type": "ingress",
+            "size": "{{ ingress_pool_size }}",
+            "mode": "dynamic",
+            "xoff": "{{ pool_headroom_size }}"
+        },
+        "egress_lossy_pool": {
+            "type": "egress",
+            "size": "{{ egress_pool_size }}",
+            "mode": "dynamic"
+        }
+    },
+    "BUFFER_PROFILE": {
+        "egress_lossy_profile": {
+            "pool":"egress_lossy_pool",
+            "size": "{{ egress_lossy_profile_size }}",
+            "dynamic_th": "{{ egress_lossy_profile_dynamic_th }}"
+        },
+        "egress_lossless_profile": {
+            "pool":"egress_lossy_pool",
+            "size": "{{ egress_lossy_profile_size }}",
+            "dynamic_th": "{{ passthrough_dynamic_th }}"
+        },
+        "ingress_lossy_profile": {
+            "pool":"ingress_lossless_pool",
+            "size": "{{ ingress_lossy_profile_size }}",
+            "dynamic_th": "{{ passthrough_dynamic_th }}"
+        }
+    },
+{%- endmacro %}
+
+{%- macro generate_pg_profils(port_names) %}
+    "BUFFER_PG": {
+{% for port in port_names.split(',') %}
+        "{{ port }}|0": {
+            "profile" : "ingress_lossy_profile"
+        },
+        "{{ port }}|1": {
+            "profile" : "ingress_lossy_profile"
+        },
+        "{{ port }}|2": {
+            "profile" : "ingress_lossy_profile"
+        },
+        "{{ port }}|5": {
+            "profile" : "ingress_lossy_profile"
+        },
+        "{{ port }}|6": {
+            "profile" : "ingress_lossy_profile"
+        },
+        "{{ port }}|7": {
+            "profile" : "ingress_lossy_profile"
+        }{% if not loop.last %},
+{% endif %}
+{% endfor %}
+
+    },
+{%- endmacro %}
+
+{%- macro generate_queue_buffers(port_names) %}
+    "BUFFER_QUEUE": {
+{% for port in port_names.split(',') %}
+        "{{ port }}|0": {
+            "profile" : "egress_lossy_profile"
+        },
+        "{{ port }}|1": {
+            "profile" : "egress_lossy_profile"
+        },
+        "{{ port }}|2": {
+            "profile" : "egress_lossy_profile"
+        },
+        "{{ port }}|3": {
+            "profile" : "egress_lossless_profile"
+        },
+        "{{ port }}|4": {
+            "profile" : "egress_lossless_profile"
+        },
+        "{{ port }}|5": {
+            "profile" : "egress_lossy_profile"
+        },
+        "{{ port }}|6": {
+            "profile" : "egress_lossy_profile"
+        },
+        "{{ port }}|7": {
+            "profile" : "egress_lossy_profile"
+        }{% if not loop.last %},
+{% endif %}
+{% endfor %}
+
+    }
+{% endmacro %}
+
+{%- macro generate_qos_bypass_port_list(PORT_QOS_BYPASS) %}
+    {% for port in PORT %}
+       {% if 'lanes' in PORT[port] %}
+          {% if PORT[port]['lanes'] | int >= 0xfff0 %}
+             {% set _ = PORT_QOS_BYPASS.append(port) %}
+          {% endif %}
+       {% endif %}
+    {% endfor %}
+{%- endmacro %}
